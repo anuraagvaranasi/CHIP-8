@@ -109,15 +109,16 @@ void Chip8::emulate(){
 	//Fetch:
 	//break into 2 parts, since its a 2 byte code
 	//first byte is usually to determine opcode function 
-	memory[PC] = 0x3A;
+	V[0xA] = 129;
+	memory[PC] = 0x8A;
 	memory[PC+1] = 0xEE;
 	opcode = memory[PC] << 8 | memory[PC+1];
-	char opcode_byte = (opcode & 0xF000) >> 12;//shift it 3 bytes
+	char opcode_byte = (opcode&0xF000) >> 12;//shift it 3 bytes
 	//Decode and Execute done in a switch statement
 	switch(opcode_byte){
 		case 0x0://3 different opcodes for 0
 			//00E0 = clear screen
-			if((opcode & 0xFF) == 0xE0){
+			if((opcode&0xFF) == 0xE0){
 				for(int y = 0;y < 32;++y){
 					for(int x = 0;x < 64;++x){
 						screen[x][y] = 0;
@@ -126,7 +127,7 @@ void Chip8::emulate(){
 				PC+=2;
 			}
 			//00EE = return
-			else if((opcode & 0x00FF) == 0xEE){
+			else if((opcode&0x00FF) == 0xEE){
 				--SP;
 				PC = stack[SP];
 				stack[SP] = 0;//clear stack (shouldnt be needed but incase)
@@ -136,16 +137,16 @@ void Chip8::emulate(){
 			else{
 				stack[SP] = PC;
 				++SP;
-				PC = opcode & 0x0FFF;
+				PC = opcode&0x0FFF;
 			}
 			break;
 		case 0x1: //jump to nnn
-			PC = opcode & 0x0FFF;
+			PC = opcode&0x0FFF;
 			break;
 		case 0x2: //call subroutine at nnn
 			stack[SP] = PC;
 			++SP;
-			PC = opcode & 0x0FFF;
+			PC = opcode&0x0FFF;
 			break;
 		case 0x3://0x3xvv, checks if V[x] == vv
 			if(V[(opcode&0x0F00)>>8] == (opcode&0x00FF)){
@@ -158,14 +159,61 @@ void Chip8::emulate(){
 				PC+=2;
 			}
 			PC+=2;
+			break;
 		case 0x5://0x5xy0, skips next instruction if V[x] == V[y]
 			if(V[(opcode&0xF00)>>8] == V[(opcode&0x00F0)>>4]){
 				PC+=2;
 			}
 			PC+=2;
-		case 0x6:
-			
+			break;
+		case 0x6://0x6xkk, sets V[x] to kk
+			V[(opcode&0x0F00)>>8] = (opcode&0x00FF);
+			PC+=2;
+			break;
+		case 0x7://0x7xkk, adds kk to V[x]
+			V[(opcode&0x0F00)>>8] += opcode&0x00FF;
+			PC+=2;
+			break;
+		case 0x8:{//has 9 different instructions
+			char last_bit = opcode&0x000F;//instruction dependant on last bit
+			short x = (opcode&0x0F00)>>8;//easier than writing opcode&blabla everytime
+			short y = (opcode&0x00F0)>>4;//above
+			if(last_bit == 0x0){//set Vx to Vy
+				V[x] = V[y];
+			}
+			else if(last_bit == 0x1){//Vx = Vx OR(|) Vy
+				V[x] = V[x] | V[y];
+			}
+			else if(last_bit == 0x2){//Vx = Vx AND(&) Vy
+				V[x] = V[x] & V[y];
+			}			
+			else if(last_bit == 0x3){//Vx = Vx XOR(^) Vy
+				V[x] = V[x] ^ V[y];
+			}
+			else if(last_bit == 0x4){//Vx = Vx+Vy (set Vf to carry)
+				if((V[x] + V[y]) > 0xFF) V[0xF] = 1;
+				V[x] = V[x] + V[y];
+			}
+			else if(last_bit == 0x5){//Vx = Vx-Vy, set Vf to NOT borrow
+				if(V[x] > V[y]) V[0xF] = 1;
+				V[x] = V[x] - V[y];
+			}
+			else if(last_bit == 0x6){//set Vf to least sig byte of Vx, then shift Vx right
+				V[0xF] = V[x]&0b00000001;
+				V[x] = V[x]>>1;
+			}
+			else if(last_bit == 0x7){//Vx = Vy - Vx, Vf set to NOT borrow
+				if(V[y] > V[x]) V[0xF] = 1;
+				V[x] = V[y] - V[x];
+			}
+			else if(last_bit == 0xE){//set Vf to most sig byte of Vx, then shift Vx left
+				V[0xF] = (V[x]&0b10000000)>>7;
+				V[x] = V[x]<<1;
+			}
 
+			PC+=2;
+			break;
+		}
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
 			std::cerr << "Opcode was " << opcode << "\n";
