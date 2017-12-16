@@ -8,6 +8,7 @@ public:
 	void printScreen();
 	void debugInfo();
 	void debugMem();
+	void debugScreen();
 	void emulate();
 private:
 	unsigned short opcode;//current opcode

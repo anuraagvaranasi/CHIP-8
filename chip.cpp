@@ -1,6 +1,10 @@
 #include "chip.h"
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
+#include <time.h>
+#include <bitset>
+
 
 int main(int argc, char **argv){
 
@@ -9,6 +13,7 @@ int main(int argc, char **argv){
 	chip8.debugInfo();
 	chip8.emulate();
 	chip8.debugInfo();
+	//chip8.printScreen();
 	return 0;
 }
 
@@ -41,6 +46,16 @@ void Chip8::debugMem(){
 		std::cout << std::hex << (int)memory[x];
 	}
 	std::cout << "\n";
+}
+
+//show graphics array
+void Chip8::debugScreen(){
+	for(int y = 0;y < 32;++y){
+		for(int x = 0;x < 64;++x){
+			std::cout << (int)screen[x][y];
+		}
+		std::cout << "\n";
+	}
 }
 //initial system setup
 void Chip8::initialise(char* game){
@@ -90,7 +105,7 @@ void Chip8::initialise(char* game){
 
 //print display
 void Chip8::printScreen(){
-	for(int x = 0;x < 50;++x) std::cout << "\n";
+	if(system("clear"));//if statement to deal with return value warning
 	for(int y = 0;y < 32;++y){
 		for(int x = 0;x < 64;++x){
 			if(screen[x][y]) std::cout << "*";
@@ -109,9 +124,12 @@ void Chip8::emulate(){
 	//Fetch:
 	//break into 2 parts, since its a 2 byte code
 	//first byte is usually to determine opcode function 
-	V[0xA] = 129;
-	memory[PC] = 0x8A;
-	memory[PC+1] = 0xEE;
+	memory[PC] = 0xD0;
+	memory[PC+1] = 0x03;
+
+	memory[I] = 0x3C;
+	memory[I + 1] = 0xC3;
+	memory[I + 2] = 0xFF;
 	opcode = memory[PC] << 8 | memory[PC+1];
 	char opcode_byte = (opcode&0xF000) >> 12;//shift it 3 bytes
 	//Decode and Execute done in a switch statement
@@ -214,9 +232,44 @@ void Chip8::emulate(){
 			PC+=2;
 			break;
 		}
+		case 0x9://skip next instruction if V[x] != V[y]
+			if((V[opcode&0x0F00])>>8 != V[(opcode&0x00F0)>>4]) PC += 2;
+			PC+=2;
+			break;
+		case 0xA://Annn, sets I to nnn
+			I = opcode&0x0FFF;
+			PC+=2;
+			break;
+		case 0xB://0xBnnn, set PC to nnn + V0
+			PC = opcode&0x0FFF;
+			PC+= V[0];
+			break;
+		case 0xC://Cxkk, set Vx = kk AND(&) a random byte
+			srand(time(NULL));	
+			V[(opcode&0x0F00)>>8] = (opcode&0x00FF)&(rand()%256);	
+			PC+=2;
+			break;
+		case 0xD:{//Draw a sprite(look up exact definition, too large)
+			short xcoord = V[(opcode&0x0F00)>>8];
+			short ycoord = V[(opcode&0x00F0)>>4];
+			short height = opcode&0x000F;
+			for(int y = 0;y < height;++y){
+				std::bitset<8> bits = std::bitset<8>(memory[I+y]);
+				for(int x = 0;x < 8;++x){
+					//first do collision testing (check if something went from 1 to 0)
+					if(screen[xcoord+x][ycoord+y] == 1){
+						if((screen[xcoord+x][ycoord+y]^bits[x]) == 0) V[0xF] = 1;
+					}
+					screen[xcoord+x][ycoord+y] = screen[xcoord+x][ycoord+y]^bits[x];
+				}	
+			}
+			
+
+			break;
+		}
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
-			std::cerr << "Opcode was " << opcode << "\n";
+			std::cerr << "Opcode was " << std::hex << opcode << "\n";
 			//exit(1);
 	}
 }
