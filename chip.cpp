@@ -31,7 +31,7 @@ void Chip8::debugInfo(){
 		std::cout << std::hex << stack[x] << " ";
 	}
 	std::cout << "\n";
-	std::cout << "SP = " << SP << "\n";
+	std::cout << "SP = " << SP << "\n\n";
 
 }
 
@@ -109,10 +109,10 @@ void Chip8::emulate(){
 	//Fetch:
 	//break into 2 parts, since its a 2 byte code
 	//first byte is usually to determine opcode function 
-	memory[PC] = 0x22;
-	memory[PC+1] = 0x22;
+	memory[PC] = 0x3A;
+	memory[PC+1] = 0xEE;
 	opcode = memory[PC] << 8 | memory[PC+1];
-	char opcode_byte = opcode & 0xF000;
+	char opcode_byte = (opcode & 0xF000) >> 12;//shift it 3 bytes
 	//Decode and Execute done in a switch statement
 	switch(opcode_byte){
 		case 0x0://3 different opcodes for 0
@@ -123,21 +123,52 @@ void Chip8::emulate(){
 						screen[x][y] = 0;
 					}
 				}
+				PC+=2;
 			}
 			//00EE = return
 			else if((opcode & 0x00FF) == 0xEE){
 				--SP;
 				PC = stack[SP];
+				stack[SP] = 0;//clear stack (shouldnt be needed but incase)
 			}
-			//call 0nnn, where nnn is address
+			//call 0nnn, where nnn is address (not usually used for some reason)
+			//for machine code things (dont know how implentation would differ tho)
 			else{
 				stack[SP] = PC;
 				++SP;
-				PC = memory[opcode&0x0FFF];
+				PC = opcode & 0x0FFF;
 			}
 			break;
+		case 0x1: //jump to nnn
+			PC = opcode & 0x0FFF;
+			break;
+		case 0x2: //call subroutine at nnn
+			stack[SP] = PC;
+			++SP;
+			PC = opcode & 0x0FFF;
+			break;
+		case 0x3://0x3xvv, checks if V[x] == vv
+			if(V[(opcode&0x0F00)>>8] == (opcode&0x00FF)){
+				PC+=2;
+			}
+			PC+=2;
+			break;
+		case 0x4://opposite of above
+			if(V[(opcode&0x0F00)>>8] != (opcode&0x00FF)){
+				PC+=2;
+			}
+			PC+=2;
+		case 0x5://0x5xy0, skips next instruction if V[x] == V[y]
+			if(V[(opcode&0xF00)>>8] == V[(opcode&0x00F0)>>4]){
+				PC+=2;
+			}
+			PC+=2;
+		case 0x6:
+			
+
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
+			std::cerr << "Opcode was " << opcode << "\n";
 			//exit(1);
 	}
 }
