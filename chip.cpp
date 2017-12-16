@@ -263,10 +263,23 @@ void Chip8::emulate(){
 					screen[xcoord+x][ycoord+y] = screen[xcoord+x][ycoord+y]^bits[x];
 				}	
 			}
-			
-
+			PC+=2;
 			break;
 		}
+		case 0xE://has 2 instructions
+			if((opcode&0x00F0)>>4 == 0x9){//skip if key Vx is pressed
+				if(keypad[V[(opcode&0x0F00)>>8]] == 1){
+					PC+=2;
+				}
+			} 
+			else if((opcode&0x00F0)>>4 == 0xA){//skip if not pressed
+				if(keypad[V[(opcode&0x0F00)>>8]] == 0){
+					PC+=2;
+				}
+			}
+			PC+=2;
+			break;
+
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
 			std::cerr << "Opcode was " << std::hex << opcode << "\n";
