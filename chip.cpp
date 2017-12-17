@@ -10,10 +10,10 @@ int main(int argc, char **argv){
 
 	Chip8 chip8;
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
-	chip8.debugInfo();
-	chip8.emulate();
-	chip8.debugInfo();
-	chip8.printScreen();
+	while(true){
+		chip8.emulate();
+		chip8.printScreen();
+	}
 	return 0;
 }
 
@@ -124,9 +124,6 @@ void Chip8::emulate(){
 	//Fetch:
 	//break into 2 parts, since its a 2 byte code
 	//first byte is usually to determine opcode function 
-	memory[PC] = 0xD0;
-	memory[PC+1] = 0x05;
-	I = 60;
 	opcode = memory[PC] << 8 | memory[PC+1];
 	char opcode_byte = (opcode&0xF000) >> 12;//shift it 3 bytes
 	//Decode and Execute done in a switch statement
@@ -296,6 +293,24 @@ void Chip8::emulate(){
 			}
 			else if(last_byte == 0x29){//set I to location of sprite for digit V[x]
 				I = V[x] * 5;//each digit sprite is 5 Bytes long
+			}
+			else if(last_byte == 0x33){//stores BCD of Vx in I/I+1/I+2
+				short BCD = V[x];
+				memory[I+2] = BCD%10;
+				BCD /= 10;
+				memory[I+1] = BCD%10;
+				BCD /= 10;
+				memory[I] = BCD%10;
+			}
+			else if(last_byte == 0x55){//store V0 -> Vx in memory I->I+x
+				for(int counter = 0;counter <= x;++counter){
+					memory[I+counter] = V[counter];
+				}
+			}
+			else if(last_byte == 0x65){//opposite of above
+				for(int counter = 0;counter <= x;++counter){
+					V[counter] = memory[I+counter];
+				}	
 			}
 			
 			PC+=2;
