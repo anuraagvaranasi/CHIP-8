@@ -13,7 +13,7 @@ int main(int argc, char **argv){
 	chip8.debugInfo();
 	chip8.emulate();
 	chip8.debugInfo();
-	//chip8.printScreen();
+	chip8.printScreen();
 	return 0;
 }
 
@@ -125,11 +125,8 @@ void Chip8::emulate(){
 	//break into 2 parts, since its a 2 byte code
 	//first byte is usually to determine opcode function 
 	memory[PC] = 0xD0;
-	memory[PC+1] = 0x03;
-
-	memory[I] = 0x3C;
-	memory[I + 1] = 0xC3;
-	memory[I + 2] = 0xFF;
+	memory[PC+1] = 0x05;
+	I = 60;
 	opcode = memory[PC] << 8 | memory[PC+1];
 	char opcode_byte = (opcode&0xF000) >> 12;//shift it 3 bytes
 	//Decode and Execute done in a switch statement
@@ -258,9 +255,9 @@ void Chip8::emulate(){
 				for(int x = 0;x < 8;++x){
 					//first do collision testing (check if something went from 1 to 0)
 					if(screen[xcoord+x][ycoord+y] == 1){
-						if((screen[xcoord+x][ycoord+y]^bits[x]) == 0) V[0xF] = 1;
+						if((screen[xcoord+x][ycoord+y]^bits[7-x]) == 0) V[0xF] = 1;
 					}
-					screen[xcoord+x][ycoord+y] = screen[xcoord+x][ycoord+y]^bits[x];
+					screen[xcoord+x][ycoord+y] = screen[xcoord+x][ycoord+y]^bits[7-x];
 				}	
 			}
 			PC+=2;
@@ -279,10 +276,34 @@ void Chip8::emulate(){
 			}
 			PC+=2;
 			break;
-
+		case 0xF:{//has 9 instructions
+			char last_byte = opcode&0x00FF;//last byte determines instruction
+			short x = (opcode&0x0F00)>>8;//so we dont need to keep calculating x
+			if(last_byte == 0x07){ //store delay timer in Vx
+				V[x] = delay_timer;
+			}
+			else if(last_byte == 0x0A){//wait for a key press, and store that into Vx
+				//-----------------DO LATER WHEN KEYPAD SETUP-------------------
+			}
+			else if(last_byte == 0x15){//delay timer = Vx
+				delay_timer = V[x];
+			}
+			else if(last_byte == 0x18){//set sound timer to Vx
+				sound_timer = V[x];
+			}
+			else if(last_byte == 0x1E){ //I = I + V[x]
+				I += V[x];
+			}
+			else if(last_byte == 0x29){//set I to location of sprite for digit V[x]
+				I = V[x] * 5;//each digit sprite is 5 Bytes long
+			}
+			
+			PC+=2;
+			break;
+		}
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
 			std::cerr << "Opcode was " << std::hex << opcode << "\n";
-			//exit(1);
+			exit(1);
 	}
 }
