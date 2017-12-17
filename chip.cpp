@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <bitset>
+#include <unistd.h>
 
 
 int main(int argc, char **argv){
@@ -13,6 +14,7 @@ int main(int argc, char **argv){
 	while(true){
 		chip8.emulate();
 		chip8.printScreen();
+		sleep(1/60);
 	}
 	return 0;
 }
