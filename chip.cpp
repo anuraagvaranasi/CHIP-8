@@ -1,10 +1,11 @@
 #include "chip.h"
 #include <iostream>
-#include <fstream>
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <bitset>
 #include <unistd.h>
+#include <iomanip>
 
 
 int main(int argc, char **argv){
@@ -13,9 +14,12 @@ int main(int argc, char **argv){
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
 	while(true){
 		chip8.emulate();
-		chip8.printScreen();
-		sleep(1/60);
+		chip8.debugInfo();
+		//chip8.debugMem();
+		//chip8.printScreen();
+		sleep(1);
 	}
+	
 	return 0;
 }
 
@@ -23,7 +27,7 @@ int main(int argc, char **argv){
 //print debugging information
 //(except for memory cause too big)
 void Chip8::debugInfo(){
-	std::cout << "opcode = " << std::hex << opcode << "\n";
+	std::cout << "opcode = " << std::setw(4) << std::setfill('0') << std::hex << opcode << "\n";
 	std::cout << "V Registers: ";
 	for(int x = 0;x < 16;++x){
 		std::cout << std::hex << (int)V[x] << " "; 
@@ -44,8 +48,10 @@ void Chip8::debugInfo(){
 
 //only the memory since it covers whole screen
 void Chip8::debugMem(){
-	for(int x = 0; x < 4096; ++x){
-		std::cout << std::hex << (int)memory[x];
+	int debug_until = 1000;
+	for(int x = 0; x < debug_until; ++x){
+		if(x%0x10==0)std::cout << "\n" << std::setw(3) << std::setfill('0') << x << " ";
+		std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)memory[x] << " ";
 	}
 	std::cout << "\n";
 }
@@ -94,15 +100,17 @@ void Chip8::initialise(char* game){
 	//concatenate string with .rom
 	std::string file = std::string(game) + ".c8";
 	//now load game
-	std::ifstream fs;
-	fs.open(file);
-	char c;
-	int index = 0;
-	while(fs >> c){
-		memory[index+512] = c;
-		index++;
+	//some reason C++ libraries just give errors, so back to the old days!
+	FILE *fp = fopen(file.c_str(),"r");
+	short c = fgetc(fp);
+	int x = 0;
+
+	while(c != -1){
+		memory[512+x] = c;
+		++x;
+		c = fgetc(fp);
 	}
-	fs.close();
+
 }
 
 //print display
