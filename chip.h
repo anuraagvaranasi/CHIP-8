@@ -1,5 +1,6 @@
 #ifndef CHIP_8
 #define CHIP_8
+#include <thread>
 
 
 class Chip8{
@@ -10,6 +11,9 @@ public:
 	void debugMem();
 	void debugScreen();
 	void emulate();
+	//call these in a seperate thread
+	void timers();
+	void input();
 private:
 	unsigned short opcode;//current opcode
 	unsigned char memory[4096];//4K memory emulated

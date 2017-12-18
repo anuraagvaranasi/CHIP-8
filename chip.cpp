@@ -6,7 +6,7 @@
 #include <bitset>
 #include <unistd.h>
 #include <iomanip>
-
+#include <mutex>
 
 int main(int argc, char **argv){
 
@@ -14,12 +14,12 @@ int main(int argc, char **argv){
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
 	while(true){
 		chip8.emulate();
+		//chip8.debugInfo();
 		sleep(1/500);
 	}
 	
 	return 0;
 }
-
 
 //print debugging information
 //(except for memory cause too big)
@@ -108,11 +108,37 @@ void Chip8::initialise(char* game){
 		c = fgetc(fp);
 	}
 
+	//setup timers thread
+	auto t1 = std::thread(&Chip8::timers,this);
+	t1.detach();
+
+}
+
+//call in a seperate thread
+void Chip8::input(){
+
+}
+
+//call in a seperate thread
+void Chip8::timers(){
+	std::mutex m;
+	while(true){
+		m.lock();
+		if(delay_timer != 0){
+			--delay_timer;
+		}
+		if(sound_timer != 0){
+			--sound_timer;
+		}
+		m.unlock();
+		sleep(1/60);
+	}
 }
 
 //print display
 void Chip8::printScreen(){
 	std::cout << "\033c";
+	//if(system("clear"));
 	for(int y = 0;y < 32;++y){
 		for(int x = 0;x < 64;++x){
 			if(screen[x][y]) std::cout << "*";
@@ -230,6 +256,11 @@ void Chip8::emulate(){
 				V[0xF] = (V[x]&0b10000000)>>7;
 				V[x] = V[x]<<1;
 			}
+			else{
+				std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
+				std::cerr << "Opcode was " << std::hex << opcode << "\n";
+				exit(1);
+			}
 
 			PC+=2;
 			break;
@@ -285,6 +316,7 @@ void Chip8::emulate(){
 		case 0xF:{//has 9 instructions
 			char last_byte = opcode&0x00FF;//last byte determines instruction
 			short x = (opcode&0x0F00)>>8;//so we dont need to keep calculating x
+			
 			if(last_byte == 0x07){ //store delay timer in Vx
 				V[x] = delay_timer;
 			}
@@ -320,6 +352,11 @@ void Chip8::emulate(){
 				for(int counter = 0;counter <= x;++counter){
 					V[counter] = memory[I+counter];
 				}	
+			}
+			else{
+				std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
+				std::cerr << "Opcode was " << std::hex << opcode << "\n";
+				exit(1);
 			}
 			
 			PC+=2;
