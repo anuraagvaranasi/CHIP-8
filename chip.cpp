@@ -14,9 +14,7 @@ int main(int argc, char **argv){
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
 	while(true){
 		chip8.emulate();
-		//chip8.debugInfo();
-		//chip8.debugMem();
-		sleep(1/60);
+		sleep(1/500);
 	}
 	
 	return 0;
@@ -114,7 +112,7 @@ void Chip8::initialise(char* game){
 
 //print display
 void Chip8::printScreen(){
-	if(system("clear"));//if statement to deal with return value warning
+	std::cout << "\033c";
 	for(int y = 0;y < 32;++y){
 		for(int x = 0;x < 64;++x){
 			if(screen[x][y]) std::cout << "*";
