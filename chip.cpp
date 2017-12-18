@@ -14,10 +14,9 @@ int main(int argc, char **argv){
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
 	while(true){
 		chip8.emulate();
-		chip8.debugInfo();
+		//chip8.debugInfo();
 		//chip8.debugMem();
-		//chip8.printScreen();
-		sleep(1);
+		sleep(1/60);
 	}
 	
 	return 0;
@@ -153,6 +152,7 @@ void Chip8::emulate(){
 				--SP;
 				PC = stack[SP];
 				stack[SP] = 0;//clear stack (shouldnt be needed but incase)
+				PC+=2;
 			}
 			//call 0nnn, where nnn is address (not usually used for some reason)
 			//for machine code things (dont know how implentation would differ tho)
@@ -261,12 +261,13 @@ void Chip8::emulate(){
 				std::bitset<8> bits = std::bitset<8>(memory[I+y]);
 				for(int x = 0;x < 8;++x){
 					//first do collision testing (check if something went from 1 to 0)
-					if(screen[xcoord+x][ycoord+y] == 1){
-						if((screen[xcoord+x][ycoord+y]^bits[7-x]) == 0) V[0xF] = 1;
+					if(screen[(xcoord+x)%64][ycoord+y] == 1){
+						if((screen[(xcoord+x)%64][ycoord+y]^bits[7-x]) == 0) V[0xF] = 1;
 					}
-					screen[xcoord+x][ycoord+y] = screen[xcoord+x][ycoord+y]^bits[7-x];
+					screen[(xcoord+x)%64][ycoord+y] = screen[(xcoord+x)%64][ycoord+y]^bits[7-x];
 				}	
 			}
+			printScreen();
 			PC+=2;
 			break;
 		}
