@@ -1,11 +1,14 @@
 #ifndef CHIP_8
 #define CHIP_8
 #include <thread>
+#include <SFML/Graphics.hpp>
+
 
 
 class Chip8{
 public:
 	void initialise(char* game);
+	void SFML();
 	void printScreen();
 	void debugInfo();
 	void debugMem();
@@ -26,6 +29,8 @@ private:
 	unsigned short stack[16];//only 16 bytes, anything more overflows
 	unsigned short SP;//stack pointer
 	unsigned char keypad[16];
+	sf::RenderWindow window;//display
+
 
 	unsigned char chip8_fontset[80] =
 { 

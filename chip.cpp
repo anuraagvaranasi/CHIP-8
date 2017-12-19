@@ -8,10 +8,17 @@
 #include <iomanip>
 #include <mutex>
 
+#define SCREEN_MULTIPLE 10
+
+std::mutex m;
+
+
 int main(int argc, char **argv){
 
 	Chip8 chip8;
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
+
+	
 	while(true){
 		chip8.emulate();
 		//chip8.debugInfo();
@@ -19,6 +26,34 @@ int main(int argc, char **argv){
 	}
 	
 	return 0;
+}
+
+//setup screen in seperate thread to keep it running in foreground
+void Chip8::SFML(){
+    window.clear();
+    window.display();
+    for(int x = 0;x < 64;++x){
+    	for(int y = 0;y < 32;++y){
+    		 sf::RectangleShape shape(sf::Vector2f(SCREEN_MULTIPLE, SCREEN_MULTIPLE));
+		    shape.setPosition(x*SCREEN_MULTIPLE,y*SCREEN_MULTIPLE);
+			if(screen[x][y]) shape.setFillColor(sf::Color::Green);
+			else shape.setFillColor(sf::Color::Green);
+		    window.draw(shape);
+    	}
+    }
+    window.display();
+   
+    
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+    }
 }
 
 //print debugging information
@@ -112,7 +147,15 @@ void Chip8::initialise(char* game){
 	auto t1 = std::thread(&Chip8::timers,this);
 	t1.detach();
 
+	//create window in main thread to improve cross-compatability
+	window.create(sf::VideoMode(64*SCREEN_MULTIPLE,32*SCREEN_MULTIPLE), "Chip8 Emulator");
+	//now create thread to deal with window stuff
+	auto window_thread = std::thread(&Chip8::SFML,this);
+	window_thread.detach();
+
+	sleep(1);
 }
+
 
 //call in a seperate thread
 void Chip8::input(){
@@ -121,7 +164,6 @@ void Chip8::input(){
 
 //call in a seperate thread
 void Chip8::timers(){
-	std::mutex m;
 	while(true){
 		m.lock();
 		if(delay_timer != 0){
@@ -137,15 +179,20 @@ void Chip8::timers(){
 
 //print display
 void Chip8::printScreen(){
-	std::cout << "\033c";
-	//if(system("clear"));
+    window.clear();
 	for(int y = 0;y < 32;++y){
 		for(int x = 0;x < 64;++x){
-			if(screen[x][y]) std::cout << "*";
-			else std::cout << " ";
+
+			sf::RectangleShape shape(sf::Vector2f(SCREEN_MULTIPLE, SCREEN_MULTIPLE));
+		    shape.setPosition(x*SCREEN_MULTIPLE,y*SCREEN_MULTIPLE);
+			if(screen[x][y]) shape.setFillColor(sf::Color::Green);
+			else shape.setFillColor(sf::Color::Black);
+		    window.draw(shape);
+			
 		}
-		std::cout << "\n";
 	}
+    window.display();
+    sleep(1/120);
 }
 
 //emulate a cycle
