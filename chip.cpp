@@ -29,6 +29,7 @@ int main(int argc, char **argv){
 }
 
 //setup screen in seperate thread to keep it running in foreground
+//currently does nothing but crash the program LOL
 void Chip8::SFML(){
     window.clear();
     window.display();
@@ -150,9 +151,10 @@ void Chip8::initialise(char* game){
 	//create window in main thread to improve cross-compatability
 	window.create(sf::VideoMode(64*SCREEN_MULTIPLE,32*SCREEN_MULTIPLE), "Chip8 Emulator");
 	//now create thread to deal with window stuff
+	/*
 	auto window_thread = std::thread(&Chip8::SFML,this);
 	window_thread.detach();
-
+	*/
 	sleep(1);
 }
 
@@ -192,7 +194,7 @@ void Chip8::printScreen(){
 		}
 	}
     window.display();
-    sleep(1/120);
+    sleep(1/60);
 }
 
 //emulate a cycle
