@@ -30,6 +30,7 @@ int main(int argc, char **argv){
             if (event.type == sf::Event::Closed)
                 chip8.window.close();
         }
+	sleep(1/500);//processor runs at 500Hz
 
 	}
 	
