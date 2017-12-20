@@ -8,7 +8,6 @@
 class Chip8{
 public:
 	void initialise(char* game);
-	void SFML();
 	void printScreen();
 	void debugInfo();
 	void debugMem();
@@ -17,6 +16,9 @@ public:
 	//call these in a seperate thread
 	void timers();
 	void input();
+	//want to access screen from outside class
+	sf::RenderWindow window;//display
+
 private:
 	unsigned short opcode;//current opcode
 	unsigned char memory[4096];//4K memory emulated
@@ -29,8 +31,6 @@ private:
 	unsigned short stack[16];//only 16 bytes, anything more overflows
 	unsigned short SP;//stack pointer
 	unsigned char keypad[16];
-	sf::RenderWindow window;//display
-
 
 	unsigned char chip8_fontset[80] =
 { 

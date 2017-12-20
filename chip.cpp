@@ -17,45 +17,25 @@ int main(int argc, char **argv){
 
 	Chip8 chip8;
 	chip8.initialise(argv[1]); //probably add some safety incase called without arg
+	chip8.window.create(sf::VideoMode(64*SCREEN_MULTIPLE,32*SCREEN_MULTIPLE), "Chip8 Emulator");
 
 	
-	while(true){
+	while(chip8.window.isOpen()){
+		//first emulate a cycle (and print to screen)
 		chip8.emulate();
-		//chip8.debugInfo();
-		sleep(1/500);
+		//then deal with events
+		sf::Event event;
+        while (chip8.window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                chip8.window.close();
+        }
+
 	}
 	
 	return 0;
 }
 
-//setup screen in seperate thread to keep it running in foreground
-//currently does nothing but crash the program LOL
-void Chip8::SFML(){
-    window.clear();
-    window.display();
-    for(int x = 0;x < 64;++x){
-    	for(int y = 0;y < 32;++y){
-    		 sf::RectangleShape shape(sf::Vector2f(SCREEN_MULTIPLE, SCREEN_MULTIPLE));
-		    shape.setPosition(x*SCREEN_MULTIPLE,y*SCREEN_MULTIPLE);
-			if(screen[x][y]) shape.setFillColor(sf::Color::Green);
-			else shape.setFillColor(sf::Color::Green);
-		    window.draw(shape);
-    	}
-    }
-    window.display();
-   
-    
-    while (window.isOpen())
-    {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-
-    }
-}
 
 //print debugging information
 //(except for memory cause too big)
@@ -148,14 +128,8 @@ void Chip8::initialise(char* game){
 	auto t1 = std::thread(&Chip8::timers,this);
 	t1.detach();
 
-	//create window in main thread to improve cross-compatability
-	window.create(sf::VideoMode(64*SCREEN_MULTIPLE,32*SCREEN_MULTIPLE), "Chip8 Emulator");
-	//now create thread to deal with window stuff
-	/*
-	auto window_thread = std::thread(&Chip8::SFML,this);
-	window_thread.detach();
-	*/
-	sleep(1);
+	//create window in CHIP8 initialise so you can access it from functions
+	
 }
 
 
