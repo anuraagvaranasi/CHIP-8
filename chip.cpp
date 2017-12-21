@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <mutex>
 
-#define SCREEN_MULTIPLE 10
+#define SCREEN_MULTIPLE 20
 
 std::mutex m;
 
@@ -27,9 +27,12 @@ int main(int argc, char **argv){
 		sf::Event event;
         while (chip8.window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed){
                 chip8.window.close();
+            }
         }
+        chip8.checkKeys();
+
 	sleep(1/500);//processor runs at 500Hz
 
 	}
@@ -133,12 +136,6 @@ void Chip8::initialise(char* game){
 	
 }
 
-
-//call in a seperate thread
-void Chip8::input(){
-
-}
-
 //call in a seperate thread
 void Chip8::timers(){
 	while(true){
@@ -152,6 +149,65 @@ void Chip8::timers(){
 		m.unlock();
 		sleep(1/60);
 	}
+}
+
+//check input
+void Chip8::checkKeys(){
+
+	for(int x = 0;x < 16;++x){
+		keypad[x] = 0;
+	}
+	
+	if(sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)){
+        keypad[0] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Num2)){
+    	keypad[1] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Num3)){
+    	keypad[2] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Num4)){
+    	keypad[3] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Q)){
+    	keypad[4] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+    	keypad[5] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::E)){
+    	keypad[6] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::R)){
+    	keypad[7] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+    	keypad[8] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+    	keypad[9] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+    	keypad[0xA] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::F)){
+    	keypad[0xB] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::Z)){
+    	keypad[0xC] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::X)){
+    	keypad[0xD] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::C)){
+    	keypad[0xE] = 1;
+    }
+    else if(sf::Keyboard::isKeyPressed(sf::Keyboard::V)){
+    	keypad[0xF] = 1;
+    }
+
+
 }
 
 //print display

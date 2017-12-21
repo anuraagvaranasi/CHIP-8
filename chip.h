@@ -13,9 +13,9 @@ public:
 	void debugMem();
 	void debugScreen();
 	void emulate();
-	//call these in a seperate thread
+	void checkKeys();
+	//call this in a seperate thread
 	void timers();
-	void input();
 	//want to access screen from outside class
 	sf::RenderWindow window;//display
 
