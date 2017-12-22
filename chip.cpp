@@ -145,6 +145,7 @@ void Chip8::timers(){
 		}
 		if(sound_timer != 0){
 			--sound_timer;
+			std::cout << "pretend this is a beep\n";
 		}
 		m.unlock();
 		sleep(1/60);
@@ -250,6 +251,7 @@ void Chip8::emulate(){
 					}
 				}
 				PC+=2;
+				printScreen();
 			}
 			//00EE = return
 			else if((opcode&0x00FF) == 0xEE){
@@ -363,6 +365,7 @@ void Chip8::emulate(){
 			PC+=2;
 			break;
 		case 0xD:{//Draw a sprite(look up exact definition, too large)
+			V[0xF] = 0;
 			short xcoord = V[(opcode&0x0F00)>>8];
 			short ycoord = V[(opcode&0x00F0)>>4];
 			short height = opcode&0x000F;
@@ -378,8 +381,9 @@ void Chip8::emulate(){
 			}
 			printScreen();
 			PC+=2;
-			break;
 		}
+		break;
+
 		case 0xE://has 2 instructions
 			if((opcode&0x00F0)>>4 == 0x9){//skip if key Vx is pressed
 				if(keypad[V[(opcode&0x0F00)>>8]] == 1){
@@ -401,7 +405,13 @@ void Chip8::emulate(){
 				V[x] = delay_timer;
 			}
 			else if(last_byte == 0x0A){//wait for a key press, and store that into Vx
-				//-----------------DO LATER WHEN KEYPAD SETUP-------------------
+				for(int i = 0;i < 16;++i){
+					if(keypad[i] == 1){
+						PC+=2;
+						V[x] = i;
+						break;
+					}
+				}
 			}
 			else if(last_byte == 0x15){//delay timer = Vx
 				delay_timer = V[x];
@@ -427,11 +437,14 @@ void Chip8::emulate(){
 				for(int counter = 0;counter <= x;++counter){
 					memory[I+counter] = V[counter];
 				}
+				//also I = I + x + 1
+				I = I + x + 1;
 			}
 			else if(last_byte == 0x65){//opposite of above
 				for(int counter = 0;counter <= x;++counter){
 					V[counter] = memory[I+counter];
 				}	
+				I = I + x + 1;
 			}
 			else{
 				std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
@@ -440,8 +453,8 @@ void Chip8::emulate(){
 			}
 			
 			PC+=2;
-			break;
 		}
+		break;
 		default: 
 			std::cerr << "An error has occurred. An opcode that does not exist has been called\n";
 			std::cerr << "Opcode was " << std::hex << opcode << "\n";
