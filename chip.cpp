@@ -33,8 +33,6 @@ int main(int argc, char **argv){
             }
         }
         chip8.checkKeys();
-		//processor runs at 500Hz
-		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
 	}
 	
@@ -149,7 +147,7 @@ void Chip8::timers(){
 			//supposed to beep here but whatever
 		}
 		m.unlock();
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000/30));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000/60));
 	}
 }
 
