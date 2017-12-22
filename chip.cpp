@@ -376,11 +376,11 @@ void Chip8::emulate(){
 				{
 					if((pixel & (0x80 >> xline)) != 0)
 					{
-						if(screen[x + xline][y + yline] == 1)
+						if(screen[(x + xline)%64][(y + yline)%32] == 1)
 						{
 							V[0xF] = 1;                                    
 						}
-						screen[x + xline][y + yline] ^= 1;
+						screen[(x + xline)%64][(y + yline)%32] ^= 1;
 					}
 				}
 			}
