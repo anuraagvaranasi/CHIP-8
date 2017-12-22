@@ -131,7 +131,8 @@ void Chip8::initialise(char* game){
 	auto t1 = std::thread(&Chip8::timers,this);
 	t1.detach();
 
-	//create window in CHIP8 initialise so you can access it from functions
+	//setup random number generator
+	srand(time(NULL));	
 	
 }
 
@@ -358,27 +359,34 @@ void Chip8::emulate(){
 			PC+= V[0];
 			break;
 		case 0xC://Cxkk, set Vx = kk AND(&) a random byte
-			srand(time(NULL));	
 			V[(opcode&0x0F00)>>8] = (opcode&0x00FF)&(rand()%256);	
 			PC+=2;
 			break;
 		case 0xD:{//Draw a sprite(look up exact definition, too large)
+			unsigned short x = V[(opcode & 0x0F00) >> 8];
+			unsigned short y = V[(opcode & 0x00F0) >> 4];
+			unsigned short height = opcode & 0x000F;
+			unsigned short pixel;
+
 			V[0xF] = 0;
-			short xcoord = V[(opcode&0x0F00)>>8];
-			short ycoord = V[(opcode&0x00F0)>>4];
-			short height = opcode&0x000F;
-			for(int y = 0;y < height;++y){
-				std::bitset<8> bits = std::bitset<8>(memory[I+y]);
-				for(int x = 0;x < 8;++x){
-					//first do collision testing (check if something went from 1 to 0)
-					if(screen[(xcoord+x)%64][ycoord+y] == 1){
-						if((screen[(xcoord+x)%64][ycoord+y]^bits[7-x]) == 0) V[0xF] = 1;
+			for (int yline = 0; yline < height; yline++)
+			{
+				pixel = memory[I + yline];
+				for(int xline = 0; xline < 8; xline++)
+				{
+					if((pixel & (0x80 >> xline)) != 0)
+					{
+						if(screen[x + xline][y + yline] == 1)
+						{
+							V[0xF] = 1;                                    
+						}
+						screen[x + xline][y + yline] ^= 1;
 					}
-					screen[(xcoord+x)%64][ycoord+y] = screen[(xcoord+x)%64][ycoord+y]^bits[7-x];
-				}	
+				}
 			}
-			printScreen();
-			PC+=2;
+						
+			printScreen();			
+			PC += 2;
 		}
 		break;
 
