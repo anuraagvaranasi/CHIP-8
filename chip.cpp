@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <mutex>
+#include <chrono>
 
 #define SCREEN_MULTIPLE 20
 
@@ -32,8 +33,8 @@ int main(int argc, char **argv){
             }
         }
         chip8.checkKeys();
-
-	sleep(1/500);//processor runs at 500Hz
+		//processor runs at 500Hz
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
 	}
 	
@@ -145,10 +146,10 @@ void Chip8::timers(){
 		}
 		if(sound_timer != 0){
 			--sound_timer;
-			std::cout << "pretend this is a beep\n";
+			//supposed to beep here but whatever
 		}
 		m.unlock();
-		sleep(1/60);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000/30));
 	}
 }
 
@@ -226,7 +227,6 @@ void Chip8::printScreen(){
 		}
 	}
     window.display();
-    sleep(1/60);
 }
 
 //emulate a cycle
